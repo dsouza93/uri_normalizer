@@ -56,7 +56,6 @@ remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
         /* Replace '/../' or '/..' in input buffer with '/' in output buffer and remove previous path segment from output buffer*/ 
         else if(!strncmp(seg_start,"/../",seg_len) || !strncmp(seg_start,"/..",seg_len)){
 
-            fprintf(stderr, "ATtempting to write backwards! Be careful there son\n");
             int prev_len = 0;
             while(*write_buffer != '/' && write_buffer != ret_buffer){
                 prev_len ++;
