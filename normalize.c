@@ -4,20 +4,24 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-/* Remove Dot Algorithm outlined in RFC3986 section 5.2.4 */
+/* Remove Dot Algorithm outlined in RFC3986 section 5.2.4 
+ * Function writes path */
+/* path_ct has the size of the path. write_buffer is passed as ret_buffer, therefore it is def large enough to store the normalized uri*/
 int
-remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
+remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct){
     
-    //TODO: Ensure buffer is large enough (at least the size of the path) 
+    /* Ensure buffer is at least the size of the path */
+    if(buff_ct < path_ct){
+        fprintf(stderr,"Path buffer not large enough\n");
+        return -1;
+    }
 
-    /* Create an input buffer that we can change*/ 
-    int path_len = strlen(path);
-    char  inBuff[path_len];
-    memset(inBuff,0,path_len); 
+    /* Create an input buffer that we can change */ 
+    char  inBuff[path_ct];
+    memset(inBuff,0,path_ct); 
     strcpy(inBuff,path);
 
-
-    const char *path_end = inBuff + path_len; 
+    const char *path_end = inBuff + path_ct; 
     char *seg_start = inBuff;
     char *seg_end;
     char *write_buffer = ret_buffer;
@@ -29,21 +33,21 @@ remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
         }
         seg_end = seg_start + 1;
 
-        /*Parse such that Seg start and end hold indices the next full path segment*/ 
+        /* Parse such that Seg start/end contain the next full path segment */ 
         while(seg_end!=path_end && *seg_end != '/'){
             seg_end++;
         }
 
         seg_len = seg_end - seg_start + 1; 
 
-        /*Remove starting ../ or ./ from input buffer*/
+        /* Remove starting ../ or ./ from input buffer */
         if(!strncmp(seg_start,"../",seg_len) || !strncmp(seg_start, "./", seg_len)){
             if(seg_end != path_end){
                 seg_end ++;
             }
         }
 
-        /*Remove starting /./ or /. from input buffer and replace with '/' in output buffer*/
+        /* Remove starting /./ or /. from input buffer and replace with '/' in output buffer */
         else if (!strncmp(seg_start, "/./", seg_len) || !strncmp(seg_start, "/.", seg_len)){
             *write_buffer = '/';
             write_buffer ++;
@@ -52,8 +56,7 @@ remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
             }
         }
 
-        // TODO THIS PART is writing in places it shouldn't sometimes if path passed is empty!!
-        /* Replace '/../' or '/..' in input buffer with '/' in output buffer and remove previous path segment from output buffer*/ 
+        /* Replace /../ or /.. with / in write_buffer and remove preceding segment */
         else if(!strncmp(seg_start,"/../",seg_len) || !strncmp(seg_start,"/..",seg_len)){
 
             int prev_len = 0;
@@ -70,21 +73,22 @@ remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
                 seg_end --;
             }
         }
-        /*Remove starting '.' or '..' from input buffer*/
+
+        /* Remove starting '.' or '..' from input buffer */
         else if(!strncmp(seg_start,".",seg_len) || !strncmp(seg_start,"..", seg_len)){
             if(seg_end != path_end){
                 seg_end ++;
             }
         }
-        /* Place the current path segment to the output buffer including initial '/' but not the next '/'*/
+        /* Place the current path segment to the output buffer including initial '/' but not the next '/' */
         else{
-            //Write first char to buffer 
+            /* Write first forward slash to buffer */ 
             *write_buffer = seg_start[0];
             write_buffer ++;
             seg_start++;
             seg_len--;
 
-            //and for subsequent characters:
+            /* Write subsequent characters to buffer */
             while(*seg_start != '/' && *seg_start != 0){
                 *write_buffer = *seg_start;
                 seg_start ++;
@@ -99,9 +103,13 @@ remove_dot_segments(const char *path, char *ret_buffer, int buff_ct){
 
 }
 
-/* Function returns length of the decoded string or -1 if there was a parsing error */
+/* Function percent decodes uri_ct characters of the string uri and writes it to the decoded_uri
+ * buffer. If lower is true, it sets all characters including decoded ones to lower case.
+ * The function returns the length of the decoded string or -1 if there was a parsing error 
+ * TODO: ADD functionality to ignore unicode non-standard characters and leave them encoded. Read RFC regarding normalization and determine if this is compliant.
+*/
 int
-percent_decode(const char *uri, char *decoded_uri, int uri_ct, bool lower){
+percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower){
 
     static const char *reserved_string  = ":/?#[]@!$&\'()*+,;=";
 
@@ -113,11 +121,11 @@ percent_decode(const char *uri, char *decoded_uri, int uri_ct, bool lower){
     int i;
     for(i=0; i < uri_ct; i++){
         if(uri[i] == '%'){
-            /* Must be exactly two characters as part of the hex encoded value */
-            if(i + 2 >= uri_ct){
+            /* The next two characters are interpreted as the hex encoded value. Store in encodedVal */
+            if(uri_ct < i + 2){
                 goto decode_failure;
             }
-            char encodedVal[4] = {0};
+            char encodedVal[2] = {0};
             int j;
             for(j=0; j < 2; j++){
                 if(isxdigit(uri[i+j+1])){
@@ -131,12 +139,13 @@ percent_decode(const char *uri, char *decoded_uri, int uri_ct, bool lower){
             char decodeChar;
             sscanf(encodedVal, "%2x", &hexVal);
             decodeChar = (char)hexVal;
-            /* If it is a reserved char, leave encoded*/
+            /* If encoded value is a reserved char, leave encoded*/
             if(strchr(reserved_string, decodeChar)){
                 decoded_uri[i-offset] = uri[i];
                 decoded_uri[i + 1 - offset] = toupper(uri[i+1]);
                 decoded_uri[i + 2 - offset] = toupper(uri[i+2]);
             }
+            /* If not a reserved char, decode using the decoded_uri buffer */ 
             else{
                 if(lower){
                     decoded_uri[i - offset] = tolower(decodeChar);
@@ -148,6 +157,7 @@ percent_decode(const char *uri, char *decoded_uri, int uri_ct, bool lower){
             }
             i =i+2;
         }
+        /* Write non-encoded values to decoded buffer */
         else{
             if(lower){
                 decoded_uri[i-offset] = tolower(uri[i]);
@@ -158,10 +168,11 @@ percent_decode(const char *uri, char *decoded_uri, int uri_ct, bool lower){
         }
     }
 
+    /* Return the size of the newly decoded string */
     return uri_ct - offset;
 
 decode_failure:
-    fprintf(stderr, "ERROR Decoding String\n");
+    fprintf(stderr, "ERROR Decoding URI\n");
     return -1;
 }
 
@@ -179,24 +190,26 @@ decode_failure:
  *   6. Defaults to a single backslash for the path segment if path segment is empty
 */
 int
-normalize_uri(const char *uri, char *normal_uri, int normal_ct){
+normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct){
 
     fprintf(stderr, "Normalizing URI: %s\n", uri);
 
     /* Buffer provided must be large enough to store the uri plus one additional char */
-    //IF WE USE STRLEN(URI) again put it in a variable
-    int uri_ct = strlen(uri);
-    const char *uri_end = uri + uri_ct;
+    const char *uri_end  = uri + uri_ct;
+    const char *buff_end = normal_uri + normal_ct;
 
-    if (normal_ct < uri_ct + 2 && normal_uri){
+    if (normal_uri && normal_ct < uri_ct + 1){
         fprintf(stderr, "Buffer to Normalize URI not large enough.\n");
         return -1;
     }
 
+    /* Initialize a path buffer to pass to path normalization function later on */
     char path_buffer[normal_ct];
     memset(path_buffer, 0, normal_ct);
 
-    /* comp variables store starting/ending indexes for each uri component as it is parsed */
+    /* Comp variables store starting/ending indexes for each uri component as uri is parsed. 
+     * Write buffer traverses the normalized uri buffer as we build the normalized string.
+    */
     const char *comp_start = uri;
     const char *comp_end = uri;
     char *write_buffer = normal_uri;
@@ -228,7 +241,7 @@ normalize_uri(const char *uri, char *normal_uri, int normal_ct){
         goto normalize_failure;
     }
 
-    /* Protocol will be separated by double whacks */
+    /* Protocol must be terminated by two forward slashes */
     int i;
     for(i = 0; i < 2; i++){
         if(comp_end == uri_end || *comp_end != '/'){
@@ -243,16 +256,17 @@ normalize_uri(const char *uri, char *normal_uri, int normal_ct){
         goto normalize_failure;
     }
 
-    /* Comp_start is index of start of authority component*/
+    /* Comp_start is index of start of authority component */
     int comp_ct;
     comp_start = comp_end;
 
-    /* Parse and decode the authority component and normalize userinfo if needed */
+    /* Set comp start/end to contain authority component */
     bool userInfo = false;
     while(*comp_end != '/' && *comp_end != '?' && *comp_end != '#' && comp_end != uri_end){
+        /* If we encounter userinfo, decode it without altering case and set comp_start/end to only include hostname/port */
         if(*comp_end == '@' && userInfo == false){
             comp_ct = comp_end - comp_start;
-            comp_ct = percent_decode(comp_start, write_buffer, comp_ct, false);
+            comp_ct = percent_decode(comp_start, comp_ct, write_buffer, false);
             if(comp_ct < 0){
                 goto normalize_failure;
             }
@@ -263,31 +277,26 @@ normalize_uri(const char *uri, char *normal_uri, int normal_ct){
         comp_end ++;
     }
 
+    /* UserInfo without a hostname is invalid */ 
     if(userInfo == true && comp_end == uri_end){
         goto normalize_failure;
     }
-
-    //COMP_END could be the end of the URI at this point.. IS this handled correclty???!!??!?!??!??!
-    //IF so that is totally fine. Just keep that in mind when reviewing the code as we go
-    //TODO Think we must add if comp_end == uri_end && userInfo == true, Then throw an error
-    //What about http://dylanSouza:pewpoy@
  
     comp_ct = comp_end - comp_start;
 
-    //TODO Decide if we want a if comp_ct == 0 return because we are done (could be http://??stooobabeebop)
+    /* - comp start/end holds indices in original uri of hostname/port
+     * - write_buffer holds pointer to start of hostname/port written to the decode buffer 
+     * - comp_ct holds size of hostname/port in original uri
+    */
 
-    /* - comp start/end variables hold indices in original uri of hostname/port
-     * - comp_buffer holds pointer to start of hostname/port in buffer 
-     * - comp_ct holds size of hostname/port in original uri*/
-
-    /* Parse and decode the hostname and port */
-    comp_ct = percent_decode(comp_start, write_buffer, comp_ct, true);
+    /* Parse and decode the hostname and port and set to lower case */
+    comp_ct = percent_decode(comp_start, comp_ct, write_buffer, true);
 
     if(comp_ct < 0){
         goto normalize_failure;
     }
 
-    ///* Remove the port from the buffer if default*/
+    /* Remove the port from the buffer if default */
     while(*write_buffer != 0){
         if(*write_buffer == ':'){
             if(https == true && !strncmp(write_buffer, ":443", 5)){
@@ -304,47 +313,46 @@ normalize_uri(const char *uri, char *normal_uri, int normal_ct){
     
     comp_start = comp_end;
 
-    /* We have reached the end of the authority section with an empty path component. Add trailing backslash */   
+    /* If we have reached the end of the authority section with an empty path component, add a trailing backslash */   
     if(*comp_end == 0 || *comp_end == '?' || *comp_end == '#'){
         *write_buffer = '/';
         write_buffer++;
     }
 
-    //comp_end here either has the start of path component (if above not true) or remainder of the uri after the path
-    //IF empty path component, then we still run this code anyway. Not optimal perhaps can decide not to!
+    /* If there is a path component, normalize it */ 
     else{
+        /* Set comp start/end pointers to contain the path component */ 
         while(*comp_end != '?' && *comp_end != '#' && *comp_end != 0){
             comp_end ++;
         }
-        /* Decode the path component */
+        /* Decode the path component without altering case and store it to the path_buffer*/
         comp_ct = comp_end - comp_start;
-        comp_ct = percent_decode(comp_start, path_buffer, comp_ct, false); 
+        comp_ct = percent_decode(comp_start, comp_ct, path_buffer, false); 
 
         if(comp_ct < 0){
             goto normalize_failure;
         }
 
-        /* Remove the . and .. segments from the path and place in the buffer that will be returned */
+        /* Remove the . and .. segments from the path and write the now normalized path to the output buffer */
         fprintf(stderr,"Removing Dot Segments\n");
-        comp_ct = remove_dot_segments(path_buffer, write_buffer, comp_ct);
+        int buff_ct = buff_end - write_buffer; 
+        comp_ct = remove_dot_segments(path_buffer, comp_ct, write_buffer, buff_ct);
 
         if(comp_ct < 0){
-            fprintf(stderr,"Failure removing dot segments from path\n");
+            fprintf(stderr, "Failure removing dot segments from path\n");
             goto normalize_failure;
         }
         write_buffer = write_buffer + comp_ct;
-
     }
 
-    //If there is a remaining uri case normalize and decode it
+    /* If there is any uri remaining after the path, decode and set case to lower */
     if(comp_end != uri_end){
         comp_start = comp_end;
         comp_ct = uri_end - comp_start;
-        comp_ct = percent_decode(comp_start, write_buffer, comp_ct, false);
+        comp_ct = percent_decode(comp_start, comp_ct, write_buffer, false);
         if(comp_ct < 0){
             goto normalize_failure;
         }
-
     }
 
     fprintf(stderr, "Normalized URI:  %s\n", normal_uri);

@@ -15,8 +15,9 @@ normalize_uri_helper(const char *uri, const char *expected_normal){
     int err;
     char uri_normal [buff_size];
     memset(uri_normal, 0, sizeof uri_normal);
+    uri_ct = strlen(uri);
 
-    err = normalize_uri(uri, uri_normal, buff_size);
+    err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
 
     fprintf(stderr,"\n\n");
 
