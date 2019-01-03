@@ -2,6 +2,7 @@
 This normalize_uri function is used put http/https URLs in their normal form. The function takes a URL as a string and a buffer to write to. 
 
 Unit tests are provided. In order to run these, install the check framework and compile with:
+
 gcc -Wall unit_tests.c normalize.c -o unit_tests -lcheck
 
 # Resources
