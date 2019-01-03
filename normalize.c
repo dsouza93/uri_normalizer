@@ -5,8 +5,7 @@
 #include <stdio.h>
 
 /* Remove Dot Algorithm outlined in RFC3986 section 5.2.4 
- * Function writes path */
-/* path_ct has the size of the path. write_buffer is passed as ret_buffer, therefore it is def large enough to store the normalized uri*/
+ * Function writes normalizes path and writes to ret_buffer */
 int
 remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct){
     

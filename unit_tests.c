@@ -32,149 +32,119 @@ normalize_uri_helper(const char *uri, const char *expected_normal){
     return false;
 }
 
+bool
+remove_dot_helper(const char *path, const char *expected_path){
+    size_t path_ct = strlen(path);
+    if(path_ct > 0){
+        path_ct --;
+    }
+    int new_ct;
+    char path_buffer[1000];
+    memset(path_buffer,0,1000);
+
+    new_ct = remove_dot_segments(path, path_ct, path_buffer, 1000);
+
+    if(new_ct < 0){
+        return false;
+    }
+    else if (strcmp(expected_path, path_buffer) == 0){
+        return true;
+    }
+    else{
+        return false;
+    }
+
+}
+
 START_TEST(test_dot_segment)
 {
-  char path_buffer[1000];
-  memset(path_buffer,0,1000);
-  int err;
   fprintf(stderr,"******************************\n");
   fprintf(stderr,"*     DOT SEGMENT TESTS      *\n");
   fprintf(stderr,"******************************\n");
 
   fprintf(stderr,"../bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("../bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("../bar", "bar"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"./bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("./bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("./bar", "bar"));
   fprintf(stderr,"\n");
  
   fprintf(stderr,".././bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments(".././bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper(".././bar", "bar"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"./../bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("./../bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("./../bar", "bar"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/foo/./bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/foo/./bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/foo/bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/foo/./bar", "/foo/bar"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/bar/./ test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/bar/./", path_buffer, 1000); 
-  ck_assert_str_eq("/bar/", path_buffer);
-  fprintf(stderr,"New Path Size = %d\n", err);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/bar/./", "/bar/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/.", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/.", "/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/bar/. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/bar/.", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/bar/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/bar/.", "/bar/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/foo/../bar test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/foo/../bar", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/bar", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/foo/../bar", "/bar"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/bar/../ test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/bar/../", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/bar/../", "/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/.. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/..", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/..", "/"));
   fprintf(stderr,"\n");
   
   fprintf(stderr,"/bar/.. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/bar/..", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/bar/..", "/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"/foo/bar/.. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("/foo/bar/..", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("/foo/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("/foo/bar/..", "/foo/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"Single . test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments(".", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper(".", ""));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"Single .. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("..", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("..", ""));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"Test foo/bar/.. test\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("foo/bar/..", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("foo/", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("foo/bar/..", "foo/"));
   fprintf(stderr,"\n");
 
   fprintf(stderr,"Test Empty Path Segment\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
-  err = remove_dot_segments("", path_buffer, 1000); 
-  fprintf(stderr,"New Path Size = %d\n", err);
-  ck_assert_str_eq("", path_buffer);
-  memset(path_buffer,0,1000);
+  ck_assert(remove_dot_helper("", ""));
   fprintf(stderr,"\n");
 
 }
