@@ -261,7 +261,7 @@ normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct){
 
     /* Set comp start/end to contain authority component */
     bool userInfo = false;
-    while(*comp_end != '/' && *comp_end != '?' && *comp_end != '#' && comp_end != uri_end){
+    while(comp_end != uri_end && *comp_end != '/' && *comp_end != '?' && *comp_end != '#'){
         /* If we encounter userinfo, decode it without altering case and set comp_start/end to only include hostname/port */
         if(*comp_end == '@' && userInfo == false){
             comp_ct = comp_end - comp_start;
