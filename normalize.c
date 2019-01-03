@@ -341,6 +341,10 @@ normalize_uri(const char *uri, char *normal_uri, int normal_ct){
         comp_start = comp_end;
         comp_ct = uri_end - comp_start;
         comp_ct = percent_decode(comp_start, write_buffer, comp_ct, false);
+        if(comp_ct < 0){
+            goto normalize_failure;
+        }
+
     }
 
     fprintf(stderr, "Normalized URI:  %s\n", normal_uri);
