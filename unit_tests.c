@@ -331,5 +331,87 @@ main(void)
   remove_dot_helper("", "");
   fprintf(stderr,"\n");
 
+
+  fprintf(stderr,"Testing passing too small of a URI to normalize\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("ht", NULL);
+
+  fprintf(stderr,"Testing passing non http/https protocol\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("ht:", NULL);
+
+  fprintf(stderr,"Passing a uri with half encoded value at end\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://www.google.co%4", NULL);
+
+  fprintf(stderr,"Passing a uri with half encoded value in the middle\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://www.google.co%4psomethin/Path", NULL);
+
+  fprintf(stderr,"Passing a uri with an empty path parameter\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://www.google.com", "http://www.google.com/");
+
+  fprintf(stderr,"Passing a uri with an empty path parameter and additional query params\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://www.google.com?query1=foo&query2=bar", "http://www.google.com/?query1=foo&query2=bar");
+
+  fprintf(stderr,"Empty path parameter with port\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://www.google.com:9301?query1=foo&query2=bar", "http://www.google.com:9301/?query1=foo&query2=bar");
+
+  fprintf(stderr,"Passing a uri with a username and password\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://dylan%40:PaSsword@www.Goo%47le.coM:80/", "http://dylan%40:PaSsword@www.google.com/");
+
+  fprintf(stderr,"Testing Removal of standard http Port\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://kelloggsTester.com:80/Something/Here", "http://kelloggstester.com/Something/Here");
+
+  fprintf(stderr,"Testing Removal of standard https Port\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggsTester.com:443/Something/Here", "https://kelloggstester.com/Something/Here");
+
+  fprintf(stderr,"Testing passing of non-standard http Port\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://kelloggsTester.com:443/Something/Here", "http://kelloggstester.com:443/Something/Here");
+
+  fprintf(stderr,"Testing passing of non-standard https Port\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggsTester.com:80/Something/Here", "https://kelloggstester.com:80/Something/Here");
+
+  fprintf(stderr,"Testing the standard removal of . and .. in the path \n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggsTester.com:80/Something/Here/././bigson/../me", "https://kelloggstester.com:80/Something/Here/me");
+
+  fprintf(stderr,"Testing . and .. segments in non path components\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggsTester.com:80/Something/Here?query1=/././bigson/../me", "https://kelloggstester.com:80/Something/Here?query1=/././bigson/../me");
+  
+  fprintf(stderr,"Testing standard decdoing of multiple characters\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggs%54ester.com/%53omething/Here", "https://kelloggstester.com/Something/Here");
+
+  fprintf(stderr,"Testing passing encoded reserved characters\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://kelloggs%54ester.com/%53omething/Here%3f", "https://kelloggstester.com/Something/Here%3F");
+
+  fprintf(stderr,"Testing empty hostname with userinfon\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("https://dylan:something@", NULL);
+
+  fprintf(stderr,"Testing empty uri after http://\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://", NULL);
+
+  fprintf(stderr,"Testing http:///////\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http:///////", NULL);
+
+  fprintf(stderr,"Testing empty uri after http://?/\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  normalize_uri_helper("http://?/", NULL);
+
+
   return 0;
 }
