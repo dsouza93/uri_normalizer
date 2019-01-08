@@ -228,7 +228,6 @@ START_TEST(test_normalize)
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
   ck_assert(!normalize_uri_helper("http://", NULL));
 
-  //We just don't want the following things to seg fault 
   fprintf(stderr,"Testing http:///////\n");
   fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
   ck_assert(!normalize_uri_helper("http:///////", NULL));
@@ -258,21 +257,79 @@ jwt_suite(void)
   return s;
 }
 
+//int
+//main(void)
+//{
+//  int number_failed;
+//
+//  Suite *s;
+//  SRunner *sr;
+//
+//  s  = jwt_suite();
+//  sr = srunner_create(s);
+//
+//  srunner_run_all(sr, CK_VERBOSE);
+//  number_failed = srunner_ntests_failed(sr);
+//
+//  srunner_free(sr);
+//
+//  return (number_failed == 0) ? 0 : 1;
+//}
+//
+//
 int
 main(void)
 {
-  int number_failed;
 
-  Suite *s;
-  SRunner *sr;
+  fprintf(stderr,"/bar/. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/bar/.", "/bar/");
+  fprintf(stderr,"\n");
 
-  s  = jwt_suite();
-  sr = srunner_create(s);
+  fprintf(stderr,"/foo/../bar test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/foo/../bar", "/bar");
+  fprintf(stderr,"\n");
 
-  srunner_run_all(sr, CK_VERBOSE);
-  number_failed = srunner_ntests_failed(sr);
+  fprintf(stderr,"/bar/../ test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/bar/../", "/");
+  fprintf(stderr,"\n");
 
-  srunner_free(sr);
+  fprintf(stderr,"/.. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/..", "/");
+  fprintf(stderr,"\n");
+  
+  fprintf(stderr,"/bar/.. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/bar/..", "/");
+  fprintf(stderr,"\n");
 
-  return (number_failed == 0) ? 0 : 1;
+  fprintf(stderr,"/foo/bar/.. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("/foo/bar/..", "/foo/");
+  fprintf(stderr,"\n");
+
+  fprintf(stderr,"Single . test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper(".", "");
+  fprintf(stderr,"\n");
+
+  fprintf(stderr,"Single .. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("..", "");
+  fprintf(stderr,"\n");
+
+  fprintf(stderr,"Test foo/bar/.. test\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("foo/bar/..", "foo/");
+  fprintf(stderr,"\n");
+
+  fprintf(stderr,"Test Empty Path Segment\n");
+  fprintf(stderr,"---------------------------------------------------------------------------------------------\n");
+  remove_dot_helper("", "");
+  fprintf(stderr,"\n");
+
+  return 0;
 }
